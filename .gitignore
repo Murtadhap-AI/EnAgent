@@ -1,0 +1,29 @@
+# ─── Environment ────────────────────────────────
+.env
+
+# ─── Memory (personal data — don't share) ───────
+memory/user_memory.json
+
+# ─── Python Cache ───────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+
+# ─── Virtual Environment ─────────────────────────
+venv/
+.venv/
+env/
+
+# ─── IDEs ───────────────────────────────────────
+.vscode/
+.idea/
+*.code-workspace
+
+# ─── OS Files ───────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Logs ───────────────────────────────────────
+*.log
