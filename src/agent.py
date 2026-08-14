@@ -9,20 +9,17 @@ from src.memory import load_memory, save_memory, update_mistakes, update_topics
 
 def think(user_message: str, conversation_history: list, memory: dict):
     """
-    Jake يفكر ويرد على المستخدم.
+    Jake يفكر ويرد — مع streaming جملة جملة.
 
     input:  نص المستخدم + تاريخ المحادثة + الذاكرة
-    output: رد Jake الكامل (فيه [MEMORY] block) + تاريخ محدّث
+    output: الرد الكامل (للذاكرة) + تاريخ محدّث
     """
 
-    # نضيف رسالة المستخدم لتاريخ المحادثة
     conversation_history.append({
         "role": "user",
         "content": user_message
     })
 
-    # نبني ملخص الذاكرة ونحطه بالـ system prompt
-    # ليش؟ علشان Jake يعرف أخطاءك القديمة ويراقبها
     memory_context = ""
     if memory["mistakes"]:
         errors = ", ".join([m["error"] for m in memory["mistakes"]])
@@ -31,26 +28,40 @@ def think(user_message: str, conversation_history: list, memory: dict):
         topics = ", ".join(memory["topics_covered"])
         memory_context += f"\nTopics already covered: {topics}"
 
-    # نرسل للموديل المحلي عبر Ollama
+    
     response = ollama.chat(
-        model="qwen3:8b",
+        model="qwen3:1.7b",
         messages=[
             {"role": "system", "content": JAKE_SYSTEM_PROMPT + memory_context},
-            *conversation_history  # كل تاريخ المحادثة
-        ]
+            *conversation_history
+        ],
+        stream=True  
     )
 
-    
-    jake_reply = response['message']['content']
+    full_reply = ""   
+    buffer = ""       
 
-    
+    for chunk in response:
+        piece = chunk['message']['content']
+
+        full_reply += piece   # 
+        buffer += piece       #
+
+        if any(punct in buffer for punct in [".", "!", "?"]):
+            sentence = buffer.strip()
+            if sentence:
+                speak(sentence)   # ← نحجي الجملة فوراً بدون انتظار
+            buffer = ""           # نفضّي الـ buffer للجملة الجاية
+
+    if buffer.strip():
+        speak(buffer.strip())
+
     conversation_history.append({
         "role": "assistant",
-        "content": jake_reply
+        "content": full_reply
     })
 
-    return jake_reply, conversation_history
-
+    return full_reply, conversation_history
 
 def parse_jake_reply(full_reply: str) -> tuple[str, dict]:
     """
